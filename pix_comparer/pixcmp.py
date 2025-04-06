@@ -1,4 +1,6 @@
-from PIL import Image, ImageChops
+import argparse
+
+from PIL import Image
 
 
 def resize_to_match(img1, img2):
@@ -6,17 +8,16 @@ def resize_to_match(img1, img2):
     return img1.resize(size), img2.resize(size)
 
 
-def compare_images(img1_path, img2_path, save_path, side_path):
+def compare_images(img1_path, img2_path, save_path, side_path, tolerance ):
     img1 = Image.open(img1_path).convert("RGB")
     img2 = Image.open(img2_path).convert("RGB")
 
     if img1.size != img2.size:
         img1, img2 = resize_to_match(img1, img2)
 
-
     highlight = Image.new("RGB", img1.size)
     p1, p2, ph = img1.load(), img2.load(), highlight.load()
-    tolerance = 110
+
     for y in range(img1.height):
         for x in range(img1.width):
             r1, g1, b1 = p1[x, y]
@@ -34,6 +35,11 @@ def compare_images(img1_path, img2_path, save_path, side_path):
     highlight.save(save_path)
 
     # Side-by-side image
+    """
+    +--------+--------+-----------+
+    | img1   | img2   | highlight |
+    +--------+--------+-----------+
+    """
     combined = Image.new("RGB", (img1.width * 3, img1.height))
     combined.paste(img1, (0, 0))
     combined.paste(img2, (img1.width, 0))
@@ -41,15 +47,19 @@ def compare_images(img1_path, img2_path, save_path, side_path):
     combined.save(side_path)
 
 
+def main():
+    parser = argparse.ArgumentParser(
+        description="PixComparer: Compare two images pixel by pixel.")
+    parser.add_argument("img1", help="path for first image")
+    parser.add_argument("img2", help="path for second image")
+    parser.add_argument("--diff", default="diff.png", help='Path to save the diff image (optional, defaults to "diff.png")')
+    parser.add_argument("--side", default="side_by_side.png", help='Path to save the side-by-side comparison (optional, defaults to "side_by_side.png")')
+    parser.add_argument("--tolerance", type=int, default=110,
+                        help="Tolerance threshold for pixel differences")
 
-img1 = "C:/Users/raf88/Desktop/pix-comparer/temp_img/img1.JPG"
-img2 = "C:/Users/raf88/Desktop/pix-comparer/temp_img/img2.JPG"
-save = "C:/Users/raf88/Desktop/pix-comparer/temp_img/diff.JPG"
-side = "C:/Users/raf88/Desktop/pix-comparer/temp_img/diff2.JPG"
-compare_images(img1, img2, save, side)
+    args = parser.parse_args()
+    compare_images(args.img1, args.img2, args.diff, args.side, args.tolerance)
 
 
-
-
-
-
+if __name__ == "__main__":
+    main()
